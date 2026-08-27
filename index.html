@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>To-do</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600;700&family=Jeju+Myeongjo&display=swap');
+  :root {
+    color-scheme: dark;
+    --pink: #ff5c8a;
+    --coral: #ff5c8a;
+    --peach: #ffb877;
+    --bg: #1e1e24;
+    --card: #2a2a33;
+    --ink: #f1f1f4;
+    --muted: #a6a6ae;
+    --line: #3f3f4a;
+    --shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Albert Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-weight: 400;
+    background: var(--bg);
+    color: var(--ink);
+    display: flex;
+    justify-content: center;
+    padding: 48px 16px;
+  }
+  .page { width: 100%; max-width: 1064px; }
+  .layout {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .app { width: 100%; flex: 1 1 0; min-width: 300px; }
+  .layout > .app:first-child { flex-grow: 1.15; max-width: 598px; } /* to-do, 15% wider */
+  .panel-shopping { flex-grow: 0.85; max-width: 442px; }            /* shopping, 15% narrower */
+  h1 { font-family: 'Jeju Myeongjo', Georgia, serif; font-weight: 400; font-size: 32px; margin: 0 0 20px; letter-spacing: 0; }
+  h1 span { color: var(--coral); }
+  .add {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .add input {
+    flex: 1;
+    padding: 14px 18px;
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    background: var(--card);
+    color: var(--ink);
+    outline: none;
+    box-shadow: var(--shadow);
+  }
+  .add input::placeholder { color: var(--muted); }
+  .add input:focus { border-color: var(--coral); }
+  .add button {
+    padding: 0 22px;
+    border: none;
+    border-radius: 999px;
+    background: var(--coral);
+    color: #fff;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(255, 92, 138, 0.32);
+    transition: transform .08s ease, filter .15s ease;
+  }
+  .add button:hover { filter: brightness(1.04); }
+  .add button:active { transform: translateY(1px); }
+  .filters {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .filters button {
+    border: none;
+    background: none;
+    color: var(--muted);
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .filters button.active { background: var(--coral); color: #fff; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+  }
+  li.done .text { color: var(--muted); text-decoration: line-through; }
+  .check {
+    width: 22px; height: 22px;
+    border: 2px solid var(--line);
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+  }
+  li.done .check { background: var(--coral); border-color: var(--coral); }
+  .check svg { opacity: 0; }
+  li.done .check svg { opacity: 1; }
+  .text { flex: 1; font-size: 15px; word-break: break-word; }
+  .del {
+    border: none; background: none; color: var(--muted);
+    font-size: 18px; cursor: pointer; line-height: 1;
+    opacity: 0; transition: opacity .15s;
+  }
+  li:hover .del { opacity: 1; }
+  .del:hover { color: var(--coral); }
+  .hide {
+    border: none; background: none; color: var(--muted);
+    cursor: pointer; padding: 2px; display: flex; align-items: center;
+    flex-shrink: 0; opacity: .5; transition: opacity .15s, color .15s;
+  }
+  li:hover .hide { opacity: 1; }
+  .hide:hover { color: var(--coral); }
+  .hide svg { display: block; }
+  li.collapsed { padding-top: 10px; padding-bottom: 10px; }
+  li.collapsed .check { display: none; }
+  li.collapsed .text { display: none; }
+  li.collapsed .hide { opacity: 1; margin-left: auto; }
+  .foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .foot button {
+    border: none; background: none; color: var(--muted);
+    font-size: 13px; cursor: pointer;
+  }
+  .foot button:hover { color: var(--coral); }
+  .empty { text-align: center; color: var(--muted); padding: 32px 0; font-size: 14px; }
+
+  /* shopping list links */
+  .shop-item a.buy {
+    flex: 1;
+    font-size: 15px;
+    color: var(--ink);
+    text-decoration: none;
+    word-break: break-word;
+  }
+  .shop-item a.buy:hover { color: var(--coral); text-decoration: underline; }
+  .shop-item a.buy .arrow { color: var(--muted); font-size: 12px; margin-left: 5px; }
+
+  /* weather bar */
+  .weather {
+    height: 100px;
+    box-sizing: border-box;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 8px 16px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+  }
+  .weather-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .weather-head .place { font-size: 12px; font-weight: 600; }
+  .weather-head .place span { color: var(--muted); font-weight: 400; }
+  .weather-head .status { font-size: 11px; color: var(--muted); }
+  .forecast {
+    flex: 1;
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+  }
+  .now {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding-right: 12px;
+    border-right: 1px solid var(--line);
+    min-width: 62px;
+    line-height: 1.1;
+  }
+  .now .label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .now .icon { font-size: 18px; }
+  .now .temp { font-size: 22px; font-weight: 700; }
+  .week {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+  .day {
+    text-align: center;
+    padding: 2px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1.15;
+  }
+  .day .dow { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+  .day .icon { font-size: 17px; }
+  .day .hi { font-size: 12px; font-weight: 600; }
+  .day .lo { font-size: 11px; color: var(--muted); }
+  @media (max-width: 460px) {
+    .day .icon { font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="weather" id="weather">
+      <div class="weather-head">
+        <div class="place">Hamilton <span>· Scotland</span></div>
+        <div class="status" id="weather-status">Loading forecast…</div>
+      </div>
+      <div class="forecast">
+        <div class="now" id="now"></div>
+        <div class="week" id="week"></div>
+      </div>
+    </div>
+
+    <div class="layout">
+      <div class="app">
+        <h1>To<span>-</span>do</h1>
+        <form class="add" id="add-form">
+          <input id="add-input" type="text" placeholder="What needs doing?" autocomplete="off" autofocus>
+          <button type="submit">Add</button>
+        </form>
+        <div class="filters" id="filters">
+          <button data-filter="all" class="active">All</button>
+          <button data-filter="active">Active</button>
+          <button data-filter="done">Done</button>
+        </div>
+        <ul id="list"></ul>
+        <div class="foot">
+          <span id="count">0 items</span>
+          <button id="clear">Clear completed</button>
+        </div>
+      </div>
+
+      <aside class="app panel-shopping">
+        <h1>Shopping<span> list</span></h1>
+        <form class="add" id="shop-form">
+          <input id="shop-input" type="text" placeholder="Add an item…" autocomplete="off">
+          <button type="submit">Add</button>
+        </form>
+        <ul id="shop-list"></ul>
+        <div class="foot">
+          <span id="shop-count">0 items</span>
+          <button id="shop-clear">Clear all</button>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+<script>
+  const KEY = 'todo.items.v1';
+  let items = JSON.parse(localStorage.getItem(KEY) || '[]');
+  let filter = 'all';
+
+  const list = document.getElementById('list');
+  const countEl = document.getElementById('count');
+  const input = document.getElementById('add-input');
+
+  const save = () => localStorage.setItem(KEY, JSON.stringify(items));
+  const uid = () => Math.random().toString(36).slice(2, 9);
+
+  const EYE = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const EYE_OFF = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20C5 20 1 12 1 12a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+
+  function render() {
+    const shown = items.filter(i =>
+      filter === 'all' ? true : filter === 'active' ? !i.done : i.done
+    );
+    shown.sort((a, b) => (a.collapsed ? 1 : 0) - (b.collapsed ? 1 : 0));
+    list.innerHTML = '';
+    if (shown.length === 0) {
+      list.innerHTML = '<div class="empty">Nothing here yet.</div>';
+    }
+    for (const item of shown) {
+      const li = document.createElement('li');
+      li.className = [item.done ? 'done' : '', item.collapsed ? 'collapsed' : ''].join(' ').trim();
+      li.innerHTML = `
+        <span class="check" data-id="${item.id}">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </span>
+        <span class="text"></span>
+        <button class="hide" data-hide="${item.id}" title="${item.collapsed ? 'Reshow' : 'Collapse'}">${item.collapsed ? EYE : EYE_OFF}</button>`;
+      li.querySelector('.text').textContent = item.text;
+      list.appendChild(li);
+    }
+    const left = items.filter(i => !i.done).length;
+    countEl.textContent = `${left} item${left === 1 ? '' : 's'} left`;
+  }
+
+  document.getElementById('add-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    items.unshift({ id: uid(), text, done: false });
+    input.value = '';
+    save(); render();
+  });
+
+  list.addEventListener('click', e => {
+    const check = e.target.closest('.check');
+    const hideBtn = e.target.closest('[data-hide]');
+    if (check) {
+      const item = items.find(i => i.id === check.dataset.id);
+      if (item) { item.done = !item.done; save(); render(); }
+    }
+    if (hideBtn) {
+      const item = items.find(i => i.id === hideBtn.dataset.hide);
+      if (item) { item.collapsed = !item.collapsed; save(); render(); }
+    }
+  });
+
+  document.getElementById('filters').addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    filter = btn.dataset.filter;
+    [...e.currentTarget.children].forEach(b => b.classList.toggle('active', b === btn));
+    render();
+  });
+
+  document.getElementById('clear').addEventListener('click', () => {
+    items = items.filter(i => !i.done);
+    save(); render();
+  });
+
+  render();
+
+  // ---- Shopping list: each item links to an Amazon UK search ----
+  const SHOP_KEY = 'shop.items.v1';
+  let shopItems = JSON.parse(localStorage.getItem(SHOP_KEY) || '[]');
+  const shopList = document.getElementById('shop-list');
+  const shopCount = document.getElementById('shop-count');
+  const shopInput = document.getElementById('shop-input');
+  const saveShop = () => localStorage.setItem(SHOP_KEY, JSON.stringify(shopItems));
+  const amazonUrl = (q) => 'https://www.amazon.co.uk/s?k=' + encodeURIComponent(q);
+
+  function renderShop() {
+    shopList.innerHTML = '';
+    if (shopItems.length === 0) {
+      shopList.innerHTML = '<div class="empty">Nothing on the list yet.</div>';
+    }
+    for (const item of shopItems) {
+      const li = document.createElement('li');
+      li.className = 'shop-item';
+      const a = document.createElement('a');
+      a.className = 'buy';
+      a.href = amazonUrl(item.text);
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.title = 'Search Amazon UK for "' + item.text + '"';
+      a.textContent = item.text;
+      const arrow = document.createElement('span');
+      arrow.className = 'arrow';
+      arrow.textContent = '↗';
+      a.appendChild(arrow);
+      const del = document.createElement('button');
+      del.className = 'del';
+      del.dataset.del = item.id;
+      del.title = 'Remove';
+      del.innerHTML = '&times;';
+      li.appendChild(a);
+      li.appendChild(del);
+      shopList.appendChild(li);
+    }
+    shopCount.textContent = `${shopItems.length} item${shopItems.length === 1 ? '' : 's'}`;
+  }
+
+  document.getElementById('shop-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const text = shopInput.value.trim();
+    if (!text) return;
+    shopItems.unshift({ id: uid(), text });
+    shopInput.value = '';
+    saveShop(); renderShop();
+  });
+
+  shopList.addEventListener('click', e => {
+    const del = e.target.closest('[data-del]');
+    if (del) {
+      shopItems = shopItems.filter(i => i.id !== del.dataset.del);
+      saveShop(); renderShop();
+    }
+  });
+
+  document.getElementById('shop-clear').addEventListener('click', () => {
+    shopItems = [];
+    saveShop(); renderShop();
+  });
+
+  renderShop();
+
+  // ---- Weather: Hamilton, Scotland via Open-Meteo (no API key) ----
+  const WEATHER = {
+    // WMO weather code -> { icon, label }
+    0:{i:'☀️',l:'Clear'}, 1:{i:'🌤️',l:'Mainly clear'}, 2:{i:'⛅',l:'Partly cloudy'}, 3:{i:'☁️',l:'Overcast'},
+    45:{i:'🌫️',l:'Fog'}, 48:{i:'🌫️',l:'Rime fog'},
+    51:{i:'🌦️',l:'Light drizzle'}, 53:{i:'🌦️',l:'Drizzle'}, 55:{i:'🌦️',l:'Heavy drizzle'},
+    56:{i:'🌧️',l:'Freezing drizzle'}, 57:{i:'🌧️',l:'Freezing drizzle'},
+    61:{i:'🌧️',l:'Light rain'}, 63:{i:'🌧️',l:'Rain'}, 65:{i:'🌧️',l:'Heavy rain'},
+    66:{i:'🌧️',l:'Freezing rain'}, 67:{i:'🌧️',l:'Freezing rain'},
+    71:{i:'🌨️',l:'Light snow'}, 73:{i:'🌨️',l:'Snow'}, 75:{i:'🌨️',l:'Heavy snow'}, 77:{i:'🌨️',l:'Snow grains'},
+    80:{i:'🌦️',l:'Rain showers'}, 81:{i:'🌦️',l:'Rain showers'}, 82:{i:'🌦️',l:'Heavy showers'},
+    85:{i:'🌨️',l:'Snow showers'}, 86:{i:'🌨️',l:'Snow showers'},
+    95:{i:'⛈️',l:'Thunderstorm'}, 96:{i:'⛈️',l:'Thunderstorm'}, 99:{i:'⛈️',l:'Thunderstorm, hail'}
+  };
+  const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const statusEl = document.getElementById('weather-status');
+  const weekEl = document.getElementById('week');
+
+  async function loadWeather() {
+    const url = 'https://api.open-meteo.com/v1/forecast'
+      + '?latitude=55.7772&longitude=-4.0392'
+      + '&current=temperature_2m,weather_code'
+      + '&daily=weather_code,temperature_2m_max,temperature_2m_min'
+      + '&timezone=Europe/London&forecast_days=7';
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      const cur = data.current;
+      if (cur) {
+        const cw = WEATHER[cur.weather_code] || {i:'', l:'—'};
+        document.getElementById('now').innerHTML = `
+          <div class="label">Now</div>
+          <div class="icon">${cw.i}</div>
+          <div class="temp">${Math.round(cur.temperature_2m)}°</div>`;
+      }
+      const d = data.daily;
+      weekEl.innerHTML = '';
+      for (let k = 0; k < d.time.length; k++) {
+        const date = new Date(d.time[k] + 'T00:00:00');
+        const w = WEATHER[d.weather_code[k]] || {i:'❓', l:'—'};
+        const hi = Math.round(d.temperature_2m_max[k]);
+        const lo = Math.round(d.temperature_2m_min[k]);
+        const el = document.createElement('div');
+        el.className = 'day' + (k === 0 ? ' today' : '');
+        el.title = w.l;
+        el.innerHTML = `
+          <div class="dow">${k === 0 ? 'Today' : DOW[date.getDay()]}</div>
+          <div class="icon">${w.i}</div>
+          <div class="hi">${hi}°</div>
+          <div class="lo">${lo}°</div>`;
+        weekEl.appendChild(el);
+      }
+      statusEl.textContent = '7-day forecast · °C';
+    } catch (e) {
+      statusEl.textContent = 'Could not load forecast (offline?)';
+    }
+  }
+  loadWeather();
+</script>
+</body>
+</html>
